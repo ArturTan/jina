@@ -1,12 +1,13 @@
 __copyright__ = "Copyright (c) 2020 Jina AI Limited. All rights reserved."
 __license__ = "Apache-2.0"
 
-import numpy as np
 
 from typing import Optional
-from .. import BaseNumericEncoder
-from ...decorators import batching
+
+import numpy as np
 from jina.excepts import UndefinedModel
+from jina.executors.decorators import batching
+from .. import BaseNumericEncoder
 
 
 class TransformEncoder(BaseNumericEncoder):
@@ -15,7 +16,9 @@ class TransformEncoder(BaseNumericEncoder):
     """
 
     def __init__(self,
+                 output_dim: int = 64,
                  model_path: Optional[str] = None,
+                 random_state: int = 2020,
                  *args,
                  **kwargs):
         """
@@ -23,6 +26,8 @@ class TransformEncoder(BaseNumericEncoder):
         """
         super().__init__(*args, **kwargs)
         self.model_path = model_path
+        self.output_dim = output_dim
+        self.random_state = random_state
 
     def post_init(self):
         import pickle

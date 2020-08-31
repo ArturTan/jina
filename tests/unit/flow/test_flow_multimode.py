@@ -1,15 +1,15 @@
-import os
 import gzip
-
+import os
 from typing import List, Dict
+
 import numpy as np
-from jina.flow import Flow
-from jina.proto.jina_pb2 import Document
+
 from jina.executors.crafters import BaseSegmenter
 from jina.executors.encoders import BaseEncoder
-from jina.executors.indexers.keyvalue.proto import BinaryPbIndexer
-from tests import JinaTestCase, random_docs
-
+from jina.executors.indexers.keyvalue import BinaryPbIndexer
+from jina.flow import Flow
+from jina.proto.jina_pb2 import Document
+from tests import JinaTestCase
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -51,7 +51,7 @@ class MultiModeFlowTestCase(JinaTestCase):
             doc3.text = 'title: this is mode1 from doc3, body: this is mode2 from doc3'
             return [doc1, doc2, doc3]
 
-        flow = Flow().add(name='crafter', uses='!MockSegmenter').\
+        flow = Flow().add(name='crafter', uses='!MockSegmenter'). \
             add(name='encoder1', uses=os.path.join(cur_dir, 'yaml/mockencoder-mode1.yml')). \
             add(name='indexer1', uses=os.path.join(cur_dir, 'yaml/numpy-indexer-1.yml'), needs=['encoder1']). \
             add(name='encoder2', uses=os.path.join(cur_dir, 'yaml/mockencoder-mode2.yml'), needs=['crafter']). \
@@ -83,13 +83,13 @@ class MultiModeFlowTestCase(JinaTestCase):
                                                       [1.0, 1.0, 1.0]]))
 
         chunkIndexer1 = BinaryPbIndexer(index_filename='chunk1.gz')
-        self.assertEqual(len(chunkIndexer1.query_handler.items()), 3)
+        assert len(chunkIndexer1.query_handler.items()) == 3
         for key, pb in chunkIndexer1.query_handler.items():
             for chunk in pb.chunks:
-                self.assertEqual(chunk.modality, 'mode1')
+                assert chunk.modality == 'mode1'
 
         chunkIndexer2 = BinaryPbIndexer(index_filename='chunk2.gz')
-        self.assertEqual(len(chunkIndexer2.query_handler.items()), 3)
+        assert len(chunkIndexer2.query_handler.items()) == 3
         for key, pb in chunkIndexer2.query_handler.items():
             for chunk in pb.chunks:
-                self.assertEqual(chunk.modality, 'mode2')
+                assert chunk.modality == 'mode2'

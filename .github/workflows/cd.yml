@@ -26,12 +26,14 @@ jobs:
           TOC_TITLE: ''
           TARGET_PATHS: 'README*.md,CHANGELOG.md,CONTRIBUTING.md'
           COMMIT_MESSAGE: 'chore(docs): update TOC'
-      - uses: peter-evans/dockerhub-description@v2.1.0
+      - uses: peter-evans/dockerhub-description@v2.3.0
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_DEVBOT_USER }}
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_DEVBOT_PWD }}
           DOCKERHUB_REPOSITORY: jinaai/jina
       - uses: actions/checkout@v2
+        with:
+          submodules: true
       - uses: actions/checkout@v2
         with:
           repository: jina-ai/api
@@ -111,6 +113,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v1
         with:
@@ -126,9 +130,9 @@ jobs:
         run: |
           pip install flake8
           # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude .git,__pycache__,docs/source/conf.py,old,build,dist,tests/
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude .git,__pycache__,docs/source/conf.py,old,build,dist,tests/
       - name: Test docker install
         run: |
           docker build  -f Dockerfiles/pip.Dockerfile -t jinaai/jina:test-pip .
@@ -139,10 +143,10 @@ jobs:
           docker ps
           jina check
           export JINA_LOG_VERBOSITY="ERROR"
-          pip install pytest pytest-xdist==1.34.0 pytest-timeout pytest-cov
-          pytest --cov=jina --cov-report=xml -n 1 --timeout=120 -v tests/unit
+          pip install pytest pytest-xdist==1.34.0 pytest-timeout pytest-cov flaky
+          pytest --force-flaky --min-passes 1 --cov=jina --cov-report=xml -n 1 --timeout=120 -v tests/unit
           mv coverage.xml unit-test-coverage.xml
-        timeout-minutes: 15
+        timeout-minutes: 30
       - name: Upload coverage result from unit-test
         if: ${{ matrix.python-version }} == 3.7 && ${{ matrix.os }} == ubuntu-latest
         uses: actions/upload-artifact@v1
@@ -160,6 +164,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v1
         with:
@@ -174,10 +180,10 @@ jobs:
           docker ps
           jina check
           export JINA_LOG_VERBOSITY="ERROR"
-          pip install pytest pytest-xdist==1.34.0 pytest-timeout pytest-cov
-          pytest --cov=jina --cov-report=xml -n 1 --timeout=120 -v tests/integration
+          pip install pytest pytest-xdist==1.34.0 pytest-timeout pytest-cov flaky
+          pytest --force-flaky --min-passes 1 --cov=jina --cov-report=xml -n 1 --timeout=120 -v tests/integration
           mv coverage.xml integration-test-coverage.xml
-        timeout-minutes: 15
+        timeout-minutes: 30
       - name: Upload coverage result from integration-test
         if: ${{ matrix.python-version }} == 3.7 && ${{ matrix.os }} == ubuntu-latest
         uses: actions/upload-artifact@v1
@@ -194,6 +200,8 @@ jobs:
         python-version: [3.7]
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Download coverage result from unit-test
         uses: actions/download-artifact@v1
         with:
